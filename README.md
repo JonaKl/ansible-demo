@@ -11,7 +11,7 @@ In those Managed Nodes, Traefik as Reverse Proxy and Load Balancer and two nginx
 
 ## Project Structure
 
-```
+```plaintext
 ansible-demo
 ├── ansible
 │   ├── ansible.cfg           # Ansible configuration settings
@@ -79,19 +79,40 @@ ansible-demo
 
 7. From the Control Node, you can run Ansible commands to manage the Managed Nodes.
 
+## Running Playbooks
+
+To deploy Traefik and Nginx on the Managed Nodes, run the following commands from within the Ansible Control Node container:
+
+```bash
+ansible-playbook -i inventory/hosts.ini /code/ansible/playbooks/all.yaml --vault-password-file /code/ansible/.env
+```
+
+or run them separately:
+
+```bash
+ansible-playbook -i /code/ansible/inventory/hosts.ini /code/ansible/playbooks/traefik.yaml --vault-password-file /code/ansible/.env
+ansible-playbook -i /code/ansible/inventory/hosts.ini /code/ansible/playbooks/nginx.yaml --vault-password-file /code/ansible/.env
+```
+
+You can also run in check mode (dry run) to see what changes would be made without actually applying them:
+
+```bash
+ansible-playbook -i /code/ansible/inventory/hosts.ini /code/ansible/playbooks/all.yaml --vault-password-file /code/ansible/.env --check
+```
+
 ## Ansible Vault
 
 This project uses Ansible Vault to encrypt sensitive data such as passwords.  
-The vault password is stored in the `ansible/.vault_password` file.  
+The vault password is stored in the `ansible/.env` file.  
 Make sure to keep this file secure and do not commit it to version control.  
-To create the vault file, use the following command:
+To encrypt the vault file, use the following command:
 
 ```bash
-ansible-vault create ansible/vars/vault.yaml --vault-password-file ansible/.vault_password
+ansible-vault encrypt /code/ansible/vars/vault.yaml --vault-password-file /code/ansible/.env
 ```
 
-To edit the vault file, use the following command:
+For decrypting or editing the vault file, use:
 
 ```bash
-ansible-vault edit ansible/vars/vault.yaml --vault-password-file ansible/.vault_password
+ansible-vault decrypt /code/ansible/vars/vault.yaml --vault-password-file /code/ansible/.env
 ```

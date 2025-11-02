@@ -1,5 +1,5 @@
 ---
-- hosts: web-servers
+- hosts: web_server
   become: yes
   vars_files:
     - ../vars/nginx.yaml
@@ -32,10 +32,43 @@
         owner: nginx
         group: nginx
         mode: '0644'
+    - name: Test nginx configuration
+      ansible.builtin.command: nginx -t
+      register: nginx_test
+      changed_when: false
+      failed_when: nginx_test.rc != 0
 
   post_tasks:
-    - name: Ensure nginx service is enabled and running
+    - name: Ensure nginx is started and enabled (systemd)
       ansible.builtin.systemd:
         name: nginx
-        enabled: yes
         state: started
+        enabled: yes
+      when: ansible_service_mgr == 'systemd'
+
+    - name: Ensure nginx is started and enabled (fallback)
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: yes
+      when: ansible_service_mgr != 'systemd'
+
+  handlers:
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: yes
+      when: ansible_service_mgr == 'systemd'
+
+    - name: Restart nginx
+      ansible.builtin.systemd:
+        name: nginx
+        state: restarted
+        enabled: yes
+      when: ansible_service_mgr == 'systemd'
+
+    - name: Restart nginx (fallback)
+      ansible.builtin.service:
+        name: nginx
+        state: restarted
+        enabled: yes
+      when: ansible_service_mgr != 'systemd'

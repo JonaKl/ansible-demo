@@ -3,6 +3,7 @@
   become: yes
   vars_files:
     - ../vars/traefik.yaml
+    - ../vars/vault.yaml
 
   pre_tasks:
     - name: Ensure prerequisite packages are installed
@@ -21,7 +22,7 @@
     - name: Download current Traefik binary
       ansible.builtin.get_url:
         url: "https://github.com/traefik/traefik/releases/download/v{{ traefik_version }}/traefik_v{{ traefik_version }}_linux_amd64.tar.gz"
-        checksum: "sha256:https://github.com/traefik/traefik/releases/download/v{{ traefik_version }}/traefik_v{{ traefik_version }}_linux_amd64.tar.gz.sha256"
+        checksum: "sha256:https://github.com/traefik/traefik/releases/download/v{{ traefik_version }}/traefik_v{{ traefik_version }}_checksums.txt"
         dest: /tmp/traefik.tar.gz
         mode: '0644'
     - name: Extract Traefik binary to /usr/local/bin
@@ -45,29 +46,25 @@
         - /var/log/traefik
     - name: Deploy Traefik configuration files
       ansible.builtin.template:
-        src: "traefik/{{ item }}.j2"
+        src: "/code/ansible/playbooks/templates/traefik/{{ item }}.j2"
         dest: "/etc/traefik/{{ item }}"
         owner: traefik
         group: traefik
         mode: '0644'
-      vars:
-        traefik_admin_password: "{{ lookup('ansible.builtin.vault', 'traefik_admin_password') }}"
       loop:
         - traefik.yaml
         - services/dynamic_config.yaml
     - name: Create Traefik systemd service
       ansible.builtin.copy:
-        src: files/traefik.service
-        dest: /etc/systemd/system/traefik.service
-        mode: '0644'
-    - name: Enable and start Traefik service
-      ansible.builtin.systemd:
-        name: traefik
-        enabled: yes
-        state: started
+        src: /code/ansible/playbooks/templates/traefik/traefik
+        dest: /etc/init.d/traefik
+        owner: root
+        group: root
+        mode: '0755'
 
   post_tasks:
-    - name: Clean up temporary Traefik archive
-      ansible.builtin.file:
-        path: /tmp/traefik.tar.gz
-        state: absent
+    - name: Ensure traefik is started and enabled
+      ansible.builtin.service:
+        name: traefik
+        state: started
+        enabled: yes

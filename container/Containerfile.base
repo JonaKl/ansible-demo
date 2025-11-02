@@ -1,19 +1,16 @@
 FROM ubuntu:latest
 
 RUN apt update && apt install -y \
-    openssh-server
-# create sshd runtime dir and host keys before switching users
+    openssh-server sudo
 RUN mkdir -p /var/run/sshd && ssh-keygen -A
 
-# create non-interactive ansible user
 RUN adduser --disabled-password --gecos "" ansible
+RUN echo "ansible ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 WORKDIR /home/ansible
 RUN mkdir -p /home/ansible/.ssh
 COPY --chown=ansible:ansible ssh/id_rsa.pub /home/ansible/.ssh/authorized_keys
 RUN chmod 600 /home/ansible/.ssh/authorized_keys && chown -R ansible:ansible /home/ansible
-
-#USER ansible
 
 EXPOSE 22 80
 CMD ["/usr/sbin/sshd", "-D"]
