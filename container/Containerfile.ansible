@@ -1,0 +1,7 @@
+FROM alpine:latest
+RUN apk --no-cache add ansible openssh-client
+WORKDIR /code
+COPY ssh/id_rsa /code/.ssh/id_rsa
+COPY ssh/id_rsa.pub /code/.ssh/authorized_keys
+RUN chmod 600 /code/.ssh/id_rsa
+CMD ["tail", "-f", "/dev/null"]

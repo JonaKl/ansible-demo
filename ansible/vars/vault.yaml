@@ -1,0 +1,2 @@
+# This file contains sensitive variables for Traefik deployment and should be kept secure.
+traefik_admin_password: very_secure_password

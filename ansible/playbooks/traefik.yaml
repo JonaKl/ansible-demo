@@ -1,0 +1,73 @@
+---
+- hosts: traefik
+  become: yes
+  vars_files:
+    - ../vars/traefik.yaml
+
+  pre_tasks:
+    - name: Ensure prerequisite packages are installed
+      ansible.builtin.package: # Will use apt, dnf, etc. based on the target system
+        name:
+          - wget
+          - tar
+        state: present # Install if not already present
+    - name: Ensure traefik user and group exist
+      ansible.builtin.user:
+        name: traefik
+        system: yes
+        create_home: no
+        state: present
+  tasks:
+    - name: Download current Traefik binary
+      ansible.builtin.get_url:
+        url: "https://github.com/traefik/traefik/releases/download/v{{ traefik_version }}/traefik_v{{ traefik_version }}_linux_amd64.tar.gz"
+        checksum: "sha256:https://github.com/traefik/traefik/releases/download/v{{ traefik_version }}/traefik_v{{ traefik_version }}_linux_amd64.tar.gz.sha256"
+        dest: /tmp/traefik.tar.gz
+        mode: '0644'
+    - name: Extract Traefik binary to /usr/local/bin
+      ansible.builtin.unarchive:
+        src: /tmp/traefik.tar.gz
+        dest: /usr/local/bin/
+        remote_src: yes
+        mode: '0755'
+        owner: traefik
+        group: traefik
+    - name: Create Traefik configuration directory
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: traefik
+        group: traefik
+        mode: '0755'
+      with_items:
+        - /etc/traefik
+        - /etc/traefik/services
+        - /var/log/traefik
+    - name: Deploy Traefik configuration files
+      ansible.builtin.template:
+        src: "traefik/{{ item }}.j2"
+        dest: "/etc/traefik/{{ item }}"
+        owner: traefik
+        group: traefik
+        mode: '0644'
+      vars:
+        traefik_admin_password: "{{ lookup('ansible.builtin.vault', 'traefik_admin_password') }}"
+      loop:
+        - traefik.yaml
+        - services/dynamic_config.yaml
+    - name: Create Traefik systemd service
+      ansible.builtin.copy:
+        src: files/traefik.service
+        dest: /etc/systemd/system/traefik.service
+        mode: '0644'
+    - name: Enable and start Traefik service
+      ansible.builtin.systemd:
+        name: traefik
+        enabled: yes
+        state: started
+
+  post_tasks:
+    - name: Clean up temporary Traefik archive
+      ansible.builtin.file:
+        path: /tmp/traefik.tar.gz
+        state: absent

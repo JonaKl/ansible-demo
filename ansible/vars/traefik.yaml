@@ -1,0 +1,15 @@
+---
+traefik_version: "3.5.4"
+traefik_email: "mustermax@example.org"
+traefik_domain: "example.org"
+traefik_dashboard: true
+traefik_dashboard_domain: "dashboard.example.org"
+traefik_services:
+  - name: "site1"
+    url: "http://ansible-demo-server-2:80"
+    route: "Host(`{{ traefik_domain }}`)"
+    service_name: "site1-service"
+  - name: "site2"
+    url: "http://ansible-demo-server-3:80"
+    route: "Host(`{{ traefik_domain }}`)"
+    service_name: "site2-service"

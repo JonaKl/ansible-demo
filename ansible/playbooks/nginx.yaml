@@ -1,0 +1,41 @@
+---
+- hosts: web-servers
+  become: yes
+  vars_files:
+    - ../vars/nginx.yaml
+
+  pre_tasks:
+    - name: Ensure prerequisite packages are installed
+      ansible.builtin.package: # Will use apt, dnf, etc. based on the target system
+        name:
+          - nginx
+        state: present # Install if not already present
+    - name: Ensure nginx user and group exist
+      ansible.builtin.user:
+        name: nginx
+        system: yes
+        create_home: no
+        state: present
+
+  tasks:
+    - name: Deploy nginx configuration file
+      ansible.builtin.template:
+        src: nginx/nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+        owner: nginx
+        group: nginx
+        mode: '0644'
+    - name: Deploy index.html template
+      ansible.builtin.template:
+        src: nginx/index.html.j2
+        dest: /usr/share/nginx/html/index.html
+        owner: nginx
+        group: nginx
+        mode: '0644'
+
+  post_tasks:
+    - name: Ensure nginx service is enabled and running
+      ansible.builtin.systemd:
+        name: nginx
+        enabled: yes
+        state: started

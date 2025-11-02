@@ -1,0 +1,34 @@
+services:
+  control-node:
+    container_name: ansible-demo-control-node
+    build:
+      context: container
+      dockerfile: Containerfile.ansible
+    volumes:
+      - ./ansible:/code/ansible
+    networks:
+      - ansible-network
+  server-1:
+    container_name: ansible-demo-server-1
+    build:
+      context: container
+      dockerfile: Containerfile.base
+    networks:
+      - ansible-network
+  server-2:
+    container_name: ansible-demo-server-2
+    build:
+      context: container
+      dockerfile: Containerfile.base
+    networks:
+      - ansible-network
+  server-3:
+    container_name: ansible-demo-server-3
+    build:
+      context: container
+      dockerfile: Containerfile.base
+    networks:
+      - ansible-network
+networks:
+  ansible-network:
+    driver: bridge
