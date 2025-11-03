@@ -1,5 +1,5 @@
 FROM alpine:latest
-RUN apk --no-cache add ansible openssh-client openssh-server
+RUN apk --no-cache add ansible curl openssh-client openssh-server
 WORKDIR /code/ansible
 RUN ssh-keygen -A
 COPY ssh/ /code/.ssh/

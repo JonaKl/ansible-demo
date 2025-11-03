@@ -1,20 +1,21 @@
 ---
-- hosts: web_server
-  become: yes
+- name: Deploy and configure nginx web server
+  hosts: web_server
+  become: true
   vars_files:
     - ../vars/nginx.yaml
 
   pre_tasks:
     - name: Ensure prerequisite packages are installed
-      ansible.builtin.package: # Will use apt, dnf, etc. based on the target system
+      ansible.builtin.package:
         name:
           - nginx
-        state: present # Install if not already present
+        state: present
     - name: Ensure nginx user and group exist
       ansible.builtin.user:
         name: nginx
-        system: yes
-        create_home: no
+        system: true
+        create_home: false
         state: present
 
   tasks:
@@ -32,6 +33,8 @@
         owner: nginx
         group: nginx
         mode: '0644'
+      vars:
+        server_ip: "{{ ansible_default_ipv4.address }}"
     - name: Test nginx configuration
       ansible.builtin.command: nginx -t
       register: nginx_test
@@ -43,32 +46,32 @@
       ansible.builtin.systemd:
         name: nginx
         state: started
-        enabled: yes
+        enabled: true
       when: ansible_service_mgr == 'systemd'
 
     - name: Ensure nginx is started and enabled (fallback)
       ansible.builtin.service:
         name: nginx
         state: started
-        enabled: yes
+        enabled: true
       when: ansible_service_mgr != 'systemd'
 
   handlers:
     - name: Reload systemd
       ansible.builtin.systemd:
-        daemon_reload: yes
+        daemon_reload: true
       when: ansible_service_mgr == 'systemd'
 
     - name: Restart nginx
       ansible.builtin.systemd:
         name: nginx
         state: restarted
-        enabled: yes
+        enabled: true
       when: ansible_service_mgr == 'systemd'
 
     - name: Restart nginx (fallback)
       ansible.builtin.service:
         name: nginx
         state: restarted
-        enabled: yes
+        enabled: true
       when: ansible_service_mgr != 'systemd'

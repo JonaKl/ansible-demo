@@ -1,6 +1,7 @@
 ---
-- hosts: traefik
-  become: yes
+- name: Deploy and configure Traefik reverse proxy
+  hosts: traefik
+  become: true
   vars_files:
     - ../vars/traefik.yaml
     - ../vars/vault.yaml
@@ -11,6 +12,9 @@
         name:
           - wget
           - tar
+          - curl
+          - dnsutils
+          - iputils-ping
         state: present # Install if not already present
     - name: Ensure traefik user and group exist
       ansible.builtin.user:
@@ -54,17 +58,24 @@
       loop:
         - traefik.yaml
         - services/dynamic_config.yaml
-    - name: Create Traefik systemd service
+      register: traefik_config
+    - name: Create Traefik service
       ansible.builtin.copy:
         src: /code/ansible/playbooks/templates/traefik/traefik
         dest: /etc/init.d/traefik
-        owner: root
-        group: root
+        owner: traefik
+        group: traefik
         mode: '0755'
 
   post_tasks:
+    - name: Ensure traefik is stopped and restarted if configuration changed
+      remote_user: traefik
+      ansible.builtin.command: 
+        service traefik stop
+      failed_when: false # Ignore failure if service is not running
+      changed_when: true
+      when: traefik_config.changed
     - name: Ensure traefik is started and enabled
-      ansible.builtin.service:
-        name: traefik
-        state: started
-        enabled: yes
+      remote_user: traefik
+      ansible.builtin.command:
+        service traefik start

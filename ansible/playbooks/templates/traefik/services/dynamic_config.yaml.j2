@@ -1,33 +1,29 @@
 http:
   routers:
-    {% for service in traefik_services %}
-    {{ service.name }}-router:
-      rule: "{{ service.route }}"
-      service: {{ service.service_name }}
-      entryPoints:
-        - websecure
-      tls:
-        certResolver: production
-    {% endfor %}
-    {% if traefik_dashboard %}
+    web-router:
+        rule: "PathPrefix(`/`)"
+        service: web
+{% if traefik_dashboard %}
     dashboard-router:
       rule: "Host(`{{ traefik_dashboard_domain }}`)"
       service: api@internal
-      entryPoints:
-        - websecure
-      tls:
-        certResolver: production
-    {% endif %}
+{% if traefik_admin_password is defined %}
+      middlewares:
+        - auth    
+  middlewares:
+    auth:
+      basicAuth:
+        users:
+          - "admin:{{ traefik_admin_password }}"
+{% endif %}
+{% endif %}
 
+{% if traefik_services | length > 0 %}
   services:
-    {% for service in traefik_services %}
-    {{ service.service_name }}:
+    web:
       loadBalancer:
         servers:
+{% for service in traefik_services %}
           - url: "{{ service.url }}"
-        #serversTransport: my-tls-client-auth
-    {% endfor %}
-
-  serversTransports:
-    my-tls-client-auth:
-      insecureSkipVerify: true
+{% endfor %}
+{% endif %}
