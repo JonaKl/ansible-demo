@@ -77,6 +77,8 @@ ansible-demo
     ssh -i /code/.ssh/id_rsa ansible@ansible-demo-server-3
     ```
 
+    If you get an error "Load key \"/code/.ssh/id_rsa\": error in libcrypto", make sure the SSH keys are in Unix LF format (not Windows CRLF).
+    
 7. From the Control Node, you can run Ansible commands to manage the Managed Nodes.
 
 ## Running Playbooks
