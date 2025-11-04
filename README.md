@@ -77,7 +77,7 @@ ansible-demo
     ssh -i /code/.ssh/id_rsa ansible@ansible-demo-server-3
     ```
 
-    If you get an error "Load key \"/code/.ssh/id_rsa\": error in libcrypto", make sure the SSH keys are in Unix LF format (not Windows CRLF) and rebuild (docker compose up -d --build).
+    If you get an error "Load key \"/code/.ssh/id_rsa\": error in libcrypto" or "/etc/init.d/traefik’: No such file or directory", make sure the files are in Unix LF format (not Windows CRLF) and rebuild (docker compose up -d --build).
 
 7. From the Control Node, you can run Ansible commands to manage the Managed Nodes.
 
